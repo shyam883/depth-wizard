@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEPTH WIZARD — Single-View Height Estimation & 3D Disaster Intelligence (SIH26175)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            command: {
+              950: '#07090e',
+              900: '#0d121d',
+              800: '#141b2b',
+              700: '#1e293b'
+            },
+            cyber: {
+              cyan: '#00f0ff',
+              blue: '#0077ff',
+              neon: '#00ff88',
+              rose: '#ff0055'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Three.js + OrbitControls for 3D Reconstruction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Leaflet for GIS Mapping -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body class="bg-command-950 text-slate-100 min-h-screen flex flex-col bg-command-grid selection:bg-cyan-500 selection:text-black">
+
+  <!-- =========================================================================
+       TOP COMMAND CENTER HEADER
+       ========================================================================= -->
+  <header class="border-b border-slate-800 bg-command-900/90 backdrop-blur-md sticky top-0 z-40 px-4 py-2.5 flex justify-between items-center shadow-lg">
+    <!-- Brand -->
+    <div class="flex items-center space-x-3 cursor-pointer" onclick="App.switchTab('landing')">
+      <div class="w-8 h-8 rounded bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 font-black text-black text-base">
+        DW
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-black text-base tracking-wider text-white">DEPTH WIZARD</span>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/40">SIH 2026 • SIH26175</span>
+        </div>
+        <p class="text-[10px] text-slate-400 font-mono">One Image. Depth. Height. 3D. Disaster Intelligence.</p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="hidden md:flex items-center space-x-1 font-mono text-xs">
+      <button data-tab-target="landing" class="px-3 py-1.5 rounded text-slate-400 hover:text-white transition">Home</button>
+      <button data-tab-target="console" class="px-3 py-1.5 rounded text-slate-400 hover:text-white transition">Console</button>
+      <button data-tab-target="scene3d" class="px-3 py-1.5 rounded text-slate-400 hover:text-white transition">3D Reconstruction</button>
+      <button data-tab-target="disaster" class="px-3 py-1.5 rounded text-slate-400 hover:text-white transition">Disaster Intelligence</button>
+      <button data-tab-target="gis" class="px-3 py-1.5 rounded text-slate-400 hover:text-white transition">GIS Mode</button>
+      <button data-tab-target="architecture" class="px-3 py-1.5 rounded text-slate-400 hover:text-white transition">How It Works</button>
+      <button data-tab-target="reports" class="px-3 py-1.5 rounded text-slate-400 hover:text-white transition">Situation Reports</button>
+    </nav>
+
+    <!-- Telemetry & Action Buttons -->
+    <div class="flex items-center space-x-2">
+      <!-- Theme Toggle Button (Light / Dark Mode) -->
+      <button id="theme-toggle-btn" onclick="App.toggleTheme()" class="px-2.5 py-1.5 rounded text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition flex items-center gap-1.5" title="Toggle Light / Dark Mode">
+        <span id="theme-toggle-icon">☀️</span>
+        <span id="theme-toggle-text" class="hidden sm:inline">LIGHT</span>
+      </button>
+
+      <!-- Pitch Deck Button -->
+      <button onclick="PitchDeck.show()" class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono font-bold bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-500/40 transition">
+        <span>📊 PITCH DECK</span>
+      </button>
+
+      <!-- Live Demo Button -->
+      <button onclick="App.loadScenario('wayanad_landslide'); App.switchTab('console');" class="px-3 py-1.5 rounded text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 transition flex items-center gap-1.5">
+        <span>⚡ LIVE DEMO</span>
+      </button>
+
+      <!-- Judge Wow Tour Button -->
+      <button onclick="JudgeTour.start()" class="btn-cyan px-3.5 py-1.5 rounded text-xs font-mono font-bold flex items-center gap-1.5">
+        <span>🏆 JUDGE TOUR</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       MAIN CONTENT CONTAINER
+       ========================================================================= -->
+  <main class="flex-1 flex flex-col p-4 max-w-[1700px] w-full mx-auto space-y-4">
+
+    <!-- =======================================================================
+         TAB 0: LANDING PAGE (Hero + 4 Capabilities + Value Prop)
+         ======================================================================= -->
+    <section id="tab-pane-landing" class="tab-pane space-y-12 py-8">
+      <!-- Hero -->
+      <div class="text-center max-w-4xl mx-auto space-y-6">
+        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/50 text-cyan-300 text-xs font-mono">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          <span>Smart India Hackathon 2026 • Problem Statement SIH26175</span>
+        </div>
+
+        <h1 class="text-4xl sm:text-6xl font-black text-white tracking-tight leading-none">
+          Turn One Image Into <br/>
+          <span class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-300 bg-clip-text text-transparent">Actionable 3D Disaster Intelligence</span>
+        </h1>
+
+        <p class="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto font-light leading-relaxed">
+          AI-powered single-view monocular depth estimation, relative height inference, and interactive 3D flythrough for rapid disaster assessment when conventional LiDAR, GIS, or drone fleets are unavailable.
+        </p>
+
+        <div class="flex flex-wrap justify-center gap-4 pt-2">
+          <button onclick="App.switchTab('console')" class="btn-cyan px-6 py-3 rounded-lg font-mono font-bold text-sm flex items-center gap-2 shadow-xl shadow-cyan-500/20">
+            <span>START ANALYSIS CONSOLE →</span>
+          </button>
+          <button onclick="App.switchTab('scene3d'); if (window.FlythroughEngine) window.FlythroughEngine.start();" class="px-6 py-3 rounded-lg font-mono font-bold text-sm bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 transition flex items-center gap-2">
+            <span>ENTER 3D FLYTHROUGH</span>
+          </button>
+          <button onclick="PitchDeck.show()" class="px-6 py-3 rounded-lg font-mono font-bold text-sm bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-500/50 transition flex items-center gap-2">
+            <span>VIEW SIH PITCH DECK</span>
+          </button>
+        </div>
+
+        <div class="text-xs font-mono text-slate-500 flex justify-center items-center gap-4">
+          <span>✓ Zero LiDAR Required</span>
+          <span>•</span>
+          <span>✓ Works on Ordinary JPG/PNG</span>
+          <span>•</span>
+          <span>✓ 100% Client-Side WebGL 60FPS</span>
+        </div>
+      </div>
+
+      <!-- 4 Core Capability Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1 -->
+        <div class="glass-panel p-6 space-y-3 hover:border-cyan-400/50 transition">
+          <div class="text-cyan-400 font-mono text-xs font-bold">01 — MONOCULAR DEPTH</div>
+          <h3 class="text-lg font-bold text-white">Pixel-Level Disparity</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Extracts dense continuous depth maps from single RGB inputs using vision transformers and perspective geometry priors.
+          </p>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="glass-panel p-6 space-y-3 hover:border-cyan-400/50 transition">
+          <div class="text-cyan-400 font-mono text-xs font-bold">02 — HEIGHT ESTIMATION</div>
+          <h3 class="text-lg font-bold text-white">Structure Verticality</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Infers relative heights of buildings, trees, walls, and terrain relief with statistical confidence intervals and scale calibration.
+          </p>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="glass-panel p-6 space-y-3 hover:border-cyan-400/50 transition">
+          <div class="text-cyan-400 font-mono text-xs font-bold">03 — 3D FLYTHROUGH</div>
+          <h3 class="text-lg font-bold text-white">WebGL Recon & Drone HUD</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Reconstructs 3D heightfield meshes and 100k+ point clouds with automated cinematic flythroughs and flight telemetry.
+          </p>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="glass-panel p-6 space-y-3 hover:border-cyan-400/50 transition">
+          <div class="text-cyan-400 font-mono text-xs font-bold">04 — DISASTER INTELLIGENCE</div>
+          <h3 class="text-lg font-bold text-white">NDRF Situational Triage</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Dynamic flood inundation modeling, damage differential analysis, emergency corridor clearance, and NDMA report exports.
+          </p>
+        </div>
+      </div>
+
+      <!-- Responsible AI / Limitations Section -->
+      <div class="glass-panel p-6 border-slate-800 space-y-3">
+        <div class="flex items-center space-x-2 text-amber-400 font-mono text-xs font-bold">
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span>RESPONSIBLE AI & TECHNICAL INTEGRITY DISCLOSURE</span>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Single-view monocular depth estimation mathematically contains scale ambiguity (\(s \cdot Z\)). Without explicit camera intrinsics or ground reference markers, elevation values are <strong class="text-white">estimated relative approximations</strong>. DEPTH WIZARD clearly displays confidence scores and error margins rather than overclaiming centimeter-level precision.
+        </p>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 1: DEPTH INTELLIGENCE CONSOLE (Input + Pipeline + Split Viewer + Table)
+         ======================================================================= -->
+    <section id="tab-pane-console" class="tab-pane hidden space-y-4">
+      <!-- Top AI Pipeline Stepper -->
+      <div class="glass-panel p-3">
+        <div class="flex items-center justify-between overflow-x-auto gap-2 text-[10px] font-mono text-slate-400 py-1">
+          <div id="pipe-1" class="pipeline-step px-2.5 py-1 rounded border border-slate-700 whitespace-nowrap">1. RGB INPUT</div>
+          <div class="text-slate-600">→</div>
+          <div id="pipe-2" class="pipeline-step px-2.5 py-1 rounded border border-slate-700 whitespace-nowrap">2. PREPROCESSING</div>
+          <div class="text-slate-600">→</div>
+          <div id="pipe-3" class="pipeline-step px-2.5 py-1 rounded border border-slate-700 whitespace-nowrap">3. MONOCULAR DEPTH</div>
+          <div class="text-slate-600">→</div>
+          <div id="pipe-4" class="pipeline-step px-2.5 py-1 rounded border border-slate-700 whitespace-nowrap">4. DEPTH MAP</div>
+          <div class="text-slate-600">→</div>
+          <div id="pipe-5" class="pipeline-step px-2.5 py-1 rounded border border-slate-700 whitespace-nowrap">5. STRUCTURE DETECT</div>
+          <div class="text-slate-600">→</div>
+          <div id="pipe-6" class="pipeline-step px-2.5 py-1 rounded border border-slate-700 whitespace-nowrap">6. HEIGHT SOLVER</div>
+          <div class="text-slate-600">→</div>
+          <div id="pipe-7" class="pipeline-step px-2.5 py-1 rounded border border-slate-700 whitespace-nowrap">7. 3D RECON</div>
+          <div class="text-slate-600">→</div>
+          <div id="pipe-8" class="pipeline-step px-2.5 py-1 rounded border border-slate-700 whitespace-nowrap">8. DISASTER HUB</div>
+        </div>
+      </div>
+
+      <!-- Main Two-Column Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        <!-- LEFT COLUMN: Input & Scenario Chooser (4 Cols) -->
+        <div class="lg:col-span-4 space-y-4">
+          <!-- Upload Box -->
+          <div class="glass-panel p-4 space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">IMAGE INPUT SOURCE</span>
+              <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30">MONOCULAR 2D</span>
+            </div>
+
+            <div id="image-drop-zone" class="border-2 border-dashed border-slate-700 hover:border-cyan-400/80 rounded-lg p-5 text-center cursor-pointer transition bg-slate-900/40 space-y-2">
+              <input type="file" id="image-file-input" class="hidden" accept="image/jpeg,image/png,image/jpg" />
+              <div class="w-10 h-10 mx-auto rounded-full bg-slate-800 flex items-center justify-center text-cyan-400">
+                📁
+              </div>
+              <p class="text-xs font-semibold text-slate-200">Drag & Drop Aerial / Satellite Image</p>
+              <p class="text-[10px] text-slate-500 font-mono">Supports JPG, JPEG, PNG (Auto-Scaled to 640px)</p>
+            </div>
+          </div>
+
+          <!-- Pre-loaded Scenarios -->
+          <div class="glass-panel p-4 space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">INDIAN DISASTER DATASETS</span>
+              <span class="text-[10px] font-mono text-slate-400">INSTANT CACHE</span>
+            </div>
+
+            <div class="space-y-2">
+              <button data-scenario-id="wayanad_landslide" class="w-full text-left p-2.5 rounded-lg border border-slate-700 bg-slate-900/60 hover:bg-slate-800/80 transition flex justify-between items-center text-xs font-mono">
+                <div>
+                  <div class="font-bold text-white">Wayanad Landslide (Kerala)</div>
+                  <div class="text-[10px] text-slate-400">Steep valley, mudflow & severed approach</div>
+                </div>
+                <span class="text-[10px] text-rose-400 bg-rose-950/50 px-1.5 py-0.5 rounded">High Relief</span>
+              </button>
+
+              <button data-scenario-id="chennai_urban_flood" class="w-full text-left p-2.5 rounded-lg border border-slate-700 bg-slate-900/60 hover:bg-slate-800/80 transition flex justify-between items-center text-xs font-mono">
+                <div>
+                  <div class="font-bold text-white">Chennai Urban Inundation</div>
+                  <div class="text-[10px] text-slate-400">Velachery basin, 1.8m standing water</div>
+                </div>
+                <span class="text-[10px] text-blue-400 bg-blue-950/50 px-1.5 py-0.5 rounded">Flood Basin</span>
+              </button>
+
+              <button data-scenario-id="chamoli_flash_flood" class="w-full text-left p-2.5 rounded-lg border border-slate-700 bg-slate-900/60 hover:bg-slate-800/80 transition flex justify-between items-center text-xs font-mono">
+                <div>
+                  <div class="font-bold text-white">Chamoli Rishi Ganga Gorge</div>
+                  <div class="text-[10px] text-slate-400">Glacial outburst, +85m cliff relief</div>
+                </div>
+                <span class="text-[10px] text-amber-400 bg-amber-950/50 px-1.5 py-0.5 rounded">Gorge</span>
+              </button>
+
+              <button data-scenario-id="delhi_yamuna_floodplain" class="w-full text-left p-2.5 rounded-lg border border-slate-700 bg-slate-900/60 hover:bg-slate-800/80 transition flex justify-between items-center text-xs font-mono">
+                <div>
+                  <div class="font-bold text-white">Yamuna Floodplain (Delhi)</div>
+                  <div class="text-[10px] text-slate-400">Overtopping riverbank & ring road bund</div>
+                </div>
+                <span class="text-[10px] text-emerald-400 bg-emerald-950/50 px-1.5 py-0.5 rounded">Riverine</span>
+              </button>
+
+              <button data-scenario-id="urban_earthquake_rubble" class="w-full text-left p-2.5 rounded-lg border border-slate-700 bg-slate-900/60 hover:bg-slate-800/80 transition flex justify-between items-center text-xs font-mono">
+                <div>
+                  <div class="font-bold text-white">Urban Structural Damage</div>
+                  <div class="text-[10px] text-slate-400">Pancake collapse & blocked access alleys</div>
+                </div>
+                <span class="text-[10px] text-red-400 bg-red-950/50 px-1.5 py-0.5 rounded">Earthquake</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Metadata Badge Card -->
+          <div class="glass-panel p-4 space-y-2 text-xs font-mono">
+            <div class="text-slate-400">TARGET: <strong id="scenario-title-badge" class="text-white font-bold">WAYANAD</strong></div>
+            <div class="text-slate-400 text-[11px]" id="scenario-subtitle">Meppadi, Wayanad (Kerala)</div>
+            <div class="text-slate-400 text-[11px]">COORDS: <span id="scenario-location" class="text-cyan-300">11.5280°N, 76.1750°E</span></div>
+            <div class="text-slate-400 text-[11px]">GSD (EST): <span id="scenario-gsd" class="text-slate-200">0.28 m/px</span></div>
+            <div class="text-slate-400 text-[11px]">CONFIDENCE: <span id="scenario-confidence" class="text-emerald-300">84%</span></div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Visualization Workspace & Height Intelligence (8 Cols) -->
+        <div class="lg:col-span-8 space-y-4">
+          
+          <!-- Split Viewer Card -->
+          <div class="glass-panel p-4 space-y-3">
+            <div class="flex flex-wrap justify-between items-center gap-2">
+              <div class="flex items-center space-x-3 font-mono text-xs">
+                <span class="text-white font-bold">DEPTH VISUALIZATION</span>
+                <span class="text-slate-500">|</span>
+                <span class="text-slate-400">RGB ←→ DEPTH WIPE</span>
+              </div>
+
+              <!-- Colormap Selector -->
+              <div class="flex items-center space-x-1 font-mono text-xs">
+                <span class="text-slate-400 text-[10px] mr-1">COLORMAP:</span>
+                <button data-colormap="turbo" class="px-2 py-0.5 rounded bg-cyan-500 text-black font-bold text-[10px]">TURBO</button>
+                <button data-colormap="spectral" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">SPECTRAL</button>
+                <button data-colormap="viridis" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">VIRIDIS</button>
+                <button data-colormap="grayscale" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">GRAYSCALE</button>
+              </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div id="split-viewer-target" class="split-viewer-container w-full bg-black rounded-lg border border-slate-800 overflow-hidden relative cursor-crosshair">
+              <!-- Rendered via JavaScript -->
+            </div>
+
+            <!-- Slider + Legend Bar -->
+            <div class="flex items-center space-x-4 pt-1 font-mono text-xs text-slate-400">
+              <span class="text-[10px] text-cyan-400">RGB ORIGINAL</span>
+              <input type="range" id="rgb-depth-slider" min="0" max="100" value="50" class="flex-1 cursor-ew-resize" />
+              <span class="text-[10px] text-cyan-400">DEPTH MAP</span>
+            </div>
+
+            <!-- Depth Probe Readout -->
+            <div id="depth-probe-readout" class="p-2 bg-slate-900/90 rounded border border-slate-800 font-mono text-[11px] text-slate-400 text-center">
+              Hover over image to probe localized distance & elevation metrics
+            </div>
+          </div>
+
+          <!-- Height Intelligence Table -->
+          <div class="glass-panel p-4 space-y-3">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="text-sm font-bold text-white font-mono tracking-wider">HEIGHT INTELLIGENCE & STRUCTURE SEGMENTS</h3>
+                <p class="text-[10px] text-slate-400 font-mono">Single-view perspective height calculations with 1σ uncertainty bounds</p>
+              </div>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40">
+                ESTIMATED METRICS
+              </span>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-800 text-[11px] font-mono text-slate-400 bg-slate-900/40">
+                    <th class="p-2.5">ID</th>
+                    <th class="p-2.5">STRUCTURE NAME</th>
+                    <th class="p-2.5">TYPE</th>
+                    <th class="p-2.5">EST. HEIGHT</th>
+                    <th class="p-2.5">REL. ELEVATION</th>
+                    <th class="p-2.5">CONFIDENCE</th>
+                    <th class="p-2.5">STATUS</th>
+                  </tr>
+                </thead>
+                <tbody id="height-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- AI Natural Language Situational Panel -->
+          <div class="glass-panel p-4 space-y-2 border-cyan-500/30">
+            <div class="flex items-center space-x-2 text-xs font-mono text-cyan-400 font-bold">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span>AI SITUATIONAL TELEMETRY & TERRAIN EXPLANATION</span>
+            </div>
+            <p id="ai-situation-text" class="text-xs text-slate-300 leading-relaxed font-mono bg-slate-900/60 p-3 rounded border border-slate-800">
+              Depth variation indicates a severe -18.4m elevation drop along the central drainage gorge...
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 2: 3D RECONSTRUCTION & DRONE FLYTHROUGH VIEWPORT
+         ======================================================================= -->
+    <section id="tab-pane-scene3d" class="tab-pane hidden space-y-4">
+      <div class="glass-panel p-4 space-y-3">
+        <!-- 3D Viewport Controls Toolbar -->
+        <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-800 pb-3">
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">3D RECONSTRUCTION VIEWPORT</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40">THREE.JS WEBGL</span>
+          </div>
+
+          <!-- Display Modes -->
+          <div class="flex items-center space-x-1 font-mono text-xs">
+            <button id="btn-mode-mesh" class="px-2.5 py-1 rounded bg-cyan-500 text-black font-bold text-[10px]">TEXTURED MESH</button>
+            <button id="btn-mode-points" class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 text-[10px]">POINT CLOUD (100K)</button>
+            <button id="btn-mode-wire" class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 text-[10px]">WIREFRAME</button>
+            <button id="btn-mode-slope" class="px-2.5 py-1 rounded bg-slate-800 text-amber-300 text-[10px]">SLOPE HAZARD</button>
+            <span class="text-slate-600">|</span>
+            <button id="btn-reset-view" class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 text-[10px]">RESET</button>
+            <button id="btn-top-down" class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 text-[10px]">TOP-DOWN</button>
+          </div>
+
+          <!-- 3D Export & Flythrough Actions -->
+          <div class="flex items-center space-x-2">
+            <button onclick="ThreeViewer.exportOBJ()" class="px-2.5 py-1 rounded font-mono text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40" title="Export 3D Mesh as Wavefront OBJ">
+              💾 OBJ
+            </button>
+            <button onclick="ThreeViewer.exportPLY()" class="px-2.5 py-1 rounded font-mono text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40" title="Export 100k Point Cloud as ASCII PLY">
+              💾 PLY
+            </button>
+            <button id="btn-fly-play" class="btn-cyan px-3 py-1 rounded font-mono text-xs font-bold flex items-center gap-1">
+              <span>▶ ENTER FLYTHROUGH</span>
+            </button>
+            <button id="btn-fly-pause" class="hidden px-3 py-1 rounded font-mono text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white">
+              <span>⏸ PAUSE</span>
+            </button>
+            <button id="btn-fly-stop" class="px-3 py-1 rounded font-mono text-xs font-bold bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-500/40">
+              <span>⏹ EXIT</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3D Canvas Container + Flythrough HUD Overlay -->
+        <div class="relative w-full h-[540px] bg-slate-950 rounded-lg overflow-hidden border border-slate-800">
+          <div id="three-canvas-container" class="w-full h-full"></div>
+
+          <!-- Drone Flythrough HUD Overlay -->
+          <div id="flythrough-hud-overlay" class="flythrough-hud hidden absolute inset-0 p-6 flex flex-col justify-between font-mono text-xs text-cyan-400">
+            <!-- Top HUD Bar -->
+            <div class="flex justify-between items-start">
+              <div class="space-y-1 bg-slate-950/70 p-3 rounded border border-cyan-500/40">
+                <div class="flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                  <span class="font-bold text-white tracking-widest text-[11px]">AUTONOMOUS RECON DRONE — LIVE FLIGHT TELEMETRY</span>
+                </div>
+                <div class="text-[10px] text-slate-300">SPLINE TRAJECTORY: <span class="text-cyan-300">ACTIVE CATMULL-ROM</span></div>
+              </div>
+
+              <div class="bg-slate-950/70 p-3 rounded border border-cyan-500/40 grid grid-cols-2 gap-x-4 gap-y-1 text-right text-[11px]">
+                <div>ALTITUDE: <strong id="hud-altitude" class="text-white">42 m</strong></div>
+                <div>REL ELEV: <strong id="hud-elevation" class="text-emerald-300">+18 m</strong></div>
+                <div>DISTANCE: <strong id="hud-dist" class="text-white">0.4 km</strong></div>
+                <div>SPEED: <strong id="hud-speed" class="text-cyan-300">45 km/h</strong></div>
+              </div>
+            </div>
+
+            <!-- Center Artificial Horizon / Crosshair Reticle -->
+            <div class="self-center flex flex-col items-center space-y-2 opacity-80">
+              <div class="w-24 h-24 border border-cyan-400/60 rounded-full flex items-center justify-center relative">
+                <div class="w-full h-[1px] bg-cyan-400/40"></div>
+                <div class="h-full w-[1px] bg-cyan-400/40 absolute"></div>
+                <div class="w-3 h-3 border border-cyan-300 rounded-full"></div>
+              </div>
+              <span class="text-[10px] tracking-widest text-cyan-300">AI TARGET LOCK</span>
+            </div>
+
+            <!-- Bottom HUD Bar -->
+            <div class="flex justify-between items-end">
+              <div class="bg-slate-950/70 p-2.5 rounded border border-cyan-500/40 text-[10px] text-slate-300">
+                VISIBLE ASSETS: <strong class="text-white">6 STRUCTURES</strong> | AI CONFIDENCE: <strong id="hud-confidence" class="text-cyan-300">84%</strong>
+              </div>
+              <div class="bg-slate-950/70 p-2.5 rounded border border-cyan-500/40 text-[10px] text-amber-300">
+                CLICK ANY STRUCTURE TO INSPECT HEIGHT
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-controls: Height Exaggeration & Flythrough Speed -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 font-mono text-xs text-slate-400">
+          <div class="flex items-center space-x-3 bg-slate-900/60 p-2.5 rounded border border-slate-800">
+            <span class="text-[11px]">HEIGHT EXAGGERATION:</span>
+            <input type="range" id="height-exaggeration-slider" min="0.5" max="3.5" step="0.1" value="1.8" class="flex-1" />
+          </div>
+
+          <div class="flex items-center space-x-3 bg-slate-900/60 p-2.5 rounded border border-slate-800">
+            <span class="text-[11px]">FLY SPEED:</span>
+            <select id="fly-speed-select" class="bg-slate-800 text-white rounded px-2 py-1 border border-slate-700 text-xs">
+              <option value="0.0008">0.5x (Slow Recon)</option>
+              <option value="0.0015" selected>1.0x (Standard Drone)</option>
+              <option value="0.0030">2.0x (Rapid Transit)</option>
+            </select>
+          </div>
+
+          <div class="flex items-center space-x-3 bg-slate-900/60 p-2.5 rounded border border-slate-800">
+            <span class="text-[11px]">CAMERA ALTITUDE:</span>
+            <input type="range" id="fly-altitude-slider" min="5" max="30" step="1" value="12" class="flex-1" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 3: DISASTER MANAGEMENT INTELLIGENCE HUB
+         ======================================================================= -->
+    <section id="tab-pane-disaster" class="tab-pane hidden space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        <!-- Left: Flood Inundation Simulator (6 Cols) -->
+        <div class="lg:col-span-6 glass-panel p-5 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <div>
+              <h3 class="text-sm font-bold text-white font-mono tracking-wider">DYNAMIC FLOOD INUNDATION MODEL</h3>
+              <p class="text-[10px] text-slate-400 font-mono">Simulate water rise over reconstructed 3D heightfield</p>
+            </div>
+            <span class="text-xs font-mono font-bold text-cyan-400 bg-cyan-950 px-2.5 py-1 rounded border border-cyan-500/40">
+              WATER: <span id="flood-water-val">2.5 m</span>
+            </span>
+          </div>
+
+          <!-- Slider -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs font-mono text-slate-400">
+              <span>0.0 m (Dry Baseline)</span>
+              <span>10.0 m (Severe Surge)</span>
+            </div>
+            <input type="range" id="flood-water-slider" min="0" max="10" step="0.2" value="2.5" class="w-full" />
+          </div>
+
+          <!-- Impact Metrics Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-center">
+            <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+              <span class="text-[10px] text-slate-500 block">VULNERABLE ASSETS</span>
+              <span id="flood-vuln-count" class="text-rose-400 font-bold text-base">4 Structures</span>
+            </div>
+            <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+              <span class="text-[10px] text-slate-500 block">IMPACT RATIO</span>
+              <span id="flood-vuln-percent" class="text-amber-400 font-bold text-base">67%</span>
+            </div>
+            <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+              <span class="text-[10px] text-slate-500 block">CRITICAL SUBMERGED</span>
+              <span id="flood-critical-count" class="text-red-500 font-bold text-base">2</span>
+            </div>
+            <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+              <span class="text-[10px] text-slate-500 block">MODERATE MARGIN</span>
+              <span id="flood-moderate-count" class="text-yellow-400 font-bold text-base">2</span>
+            </div>
+          </div>
+
+          <!-- Tactical Evacuation Corridors -->
+          <div class="space-y-2 pt-2">
+            <span class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider block">TACTICAL EVACUATION ROUTES</span>
+            <div id="disaster-corridors-list" class="space-y-2">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Pre/Post Disaster Damage Assessment (6 Cols) -->
+        <div class="lg:col-span-6 glass-panel p-5 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <div>
+              <h3 class="text-sm font-bold text-white font-mono tracking-wider">PRE / POST DAMAGE COMPARISON</h3>
+              <p class="text-[10px] text-slate-400 font-mono">Differential structural change and collapse detection</p>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-500/40">
+              AI-ASSISTED ASSESSMENT
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <span class="text-[10px] font-mono text-emerald-400 font-bold">PRE-DISASTER ARCHIVAL</span>
+              <div id="damage-pre-target" class="w-full h-auto bg-black rounded"></div>
+            </div>
+            <div class="space-y-1">
+              <span class="text-[10px] font-mono text-rose-400 font-bold">POST-DISASTER DAMAGE OVERLAY</span>
+              <div id="damage-post-target" class="w-full h-auto bg-black rounded"></div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 p-3 rounded border border-slate-800 text-xs font-mono space-y-1">
+            <div class="text-cyan-400 font-bold">DAMAGE DIFFERENTIAL METRICS:</div>
+            <p class="text-slate-300 text-[11px]">
+              • Structural collapse detected in Sector 3 (Height reduced from ~14.8m to ~4.2m).<br/>
+              • Debris accumulation estimated at +3.2m above roadway level.<br/>
+              • Emergency boat landing zone confirmed on Eastern Elevated Ramp.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 4: GIS & GEOREFERENCING MODE
+         ======================================================================= -->
+    <section id="tab-pane-gis" class="tab-pane hidden space-y-4">
+      <div class="glass-panel p-5 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="text-sm font-bold text-white font-mono tracking-wider">GEOREFERENCING & SPATIAL GIS INTEGRATION</h3>
+            <p class="text-[10px] text-slate-400 font-mono">Coordinate Reference System mapping and Ground Sampling Distance (GSD)</p>
+          </div>
+          <span class="text-xs font-mono px-3 py-1 rounded bg-slate-900 text-cyan-300 border border-cyan-500/40">
+            CRS: EPSG:4326 (WGS84)
+          </span>
+        </div>
+
+        <!-- Leaflet Map Container -->
+        <div id="gis-map-container" class="w-full h-[450px] rounded-lg overflow-hidden border border-slate-800 z-10"></div>
+
+        <!-- GIS Metadata Card -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs font-mono">
+          <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+            <span class="text-slate-500 block text-[10px]">BOUNDING LATITUDE</span>
+            <span class="text-white font-bold">11.5280° N (±0.004°)</span>
+          </div>
+          <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+            <span class="text-slate-500 block text-[10px]">BOUNDING LONGITUDE</span>
+            <span class="text-white font-bold">76.1750° E (±0.005°)</span>
+          </div>
+          <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+            <span class="text-slate-500 block text-[10px]">GEOREFERENCE MODE</span>
+            <span class="text-emerald-400 font-bold">EXIF / Region Estimated</span>
+          </div>
+          <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+            <span class="text-slate-500 block text-[10px]">ELEVATION REFERENCE</span>
+            <span class="text-cyan-300 font-bold">Inferred MSL Datum</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 5: TECHNICAL ARCHITECTURE ("HOW IT WORKS")
+         ======================================================================= -->
+    <section id="tab-pane-architecture" class="tab-pane hidden space-y-6">
+      <div class="glass-panel p-6 space-y-6">
+        <div class="border-b border-slate-800 pb-3">
+          <h2 class="text-xl font-bold text-white font-mono">DEPTH WIZARD — SYSTEM ARCHITECTURE & MATHEMATICAL FORMULATION</h2>
+          <p class="text-xs text-slate-400 font-mono">SIH 2026 Technical Blueprint: How Single 2D RGB Images are Transformed into 3D Spatial Insights</p>
+        </div>
+
+        <!-- Architecture Flowchart -->
+        <div class="bg-slate-950 p-6 rounded-xl border border-slate-800 font-mono text-xs space-y-4">
+          <div class="text-cyan-400 font-bold text-sm">[SYSTEM DATAFLOW PIPELINE]</div>
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 text-center">
+            <div class="bg-slate-900 p-3 rounded border border-cyan-500/40">
+              <span class="text-cyan-300 font-bold block mb-1">STAGE 1</span>
+              <span>Single 2D RGB Image (JPG/PNG)</span>
+            </div>
+            <div class="bg-slate-900 p-3 rounded border border-cyan-500/40">
+              <span class="text-cyan-300 font-bold block mb-1">STAGE 2</span>
+              <span>Vision Transformer Monocular Depth Model</span>
+            </div>
+            <div class="bg-slate-900 p-3 rounded border border-cyan-500/40">
+              <span class="text-cyan-300 font-bold block mb-1">STAGE 3</span>
+              <span>Structure Segment & Perspective Height Solver</span>
+            </div>
+            <div class="bg-slate-900 p-3 rounded border border-cyan-500/40">
+              <span class="text-cyan-300 font-bold block mb-1">STAGE 4</span>
+              <span>WebGL Heightfield & 100k Point Cloud</span>
+            </div>
+            <div class="bg-slate-900 p-3 rounded border border-cyan-500/40">
+              <span class="text-cyan-300 font-bold block mb-1">STAGE 5</span>
+              <span>Flood Simulation & NDMA SITREP</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mathematical Height Estimation Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+          <div class="bg-slate-900/60 p-4 rounded-lg border border-slate-800 space-y-2">
+            <h3 class="text-cyan-400 font-bold">1. Perspective Height Mathematics</h3>
+            <p class="text-slate-300 leading-relaxed">
+              Height of an object \(H_{est}\) is derived from its base depth \(Z_{base}\), pixel height \(\Delta y\), and camera focal length \(f_y\):
+            </p>
+            <div class="p-2.5 bg-slate-950 rounded border border-slate-800 text-cyan-300 text-center font-bold">
+              \(H_{est} = \frac{Z_{base} \cdot \Delta y}{f_y \cdot \cos(\theta_{pitch})}\)
+            </div>
+            <p class="text-slate-400 text-[11px]">
+              Where \(\theta_{pitch}\) is the camera tilt angle inferred from vanishing points.
+            </p>
+          </div>
+
+          <div class="bg-slate-900/60 p-4 rounded-lg border border-slate-800 space-y-2">
+            <h3 class="text-cyan-400 font-bold">2. Scale Ambiguity Resolution</h3>
+            <p class="text-slate-300 leading-relaxed">
+              Monocular depth is inherently up-to-scale. Scale is calibrated using standard reference semantic priors:
+            </p>
+            <ul class="list-disc pl-4 text-slate-300 space-y-1 text-[11px]">
+              <li>Standard vehicle height reference: ~1.5 m</li>
+              <li>Standard residential doorway: ~2.1 m</li>
+              <li>Standard building story height: ~3.2 m</li>
+              <li>Two-lane road width: ~7.0 m</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 6: SITUATION REPORTS (NDMA / NDRF Printable Format)
+         ======================================================================= -->
+    <section id="tab-pane-reports" class="tab-pane hidden space-y-4">
+      <div id="sitrep-content-target">
+        <!-- Rendered dynamically by ReportGenerator -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       MODAL: SIH PITCH DECK (Presentation Slides)
+       ========================================================================= -->
+  <div id="pitch-deck-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel p-6 max-w-3xl w-full border-cyan-400 shadow-2xl space-y-4 font-mono">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+        <span id="deck-slide-tag" class="text-xs font-bold text-cyan-400 uppercase tracking-wider">SLIDE 1 OF 5 — THE CHALLENGE</span>
+        <button onclick="PitchDeck.hide()" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <div class="space-y-1">
+        <h3 id="deck-slide-title" class="text-xl font-bold text-white">Slide Title</h3>
+        <p id="deck-slide-subtitle" class="text-xs text-slate-400">Slide Subtitle</p>
+      </div>
+
+      <div id="deck-slide-body" class="py-2">
+        <!-- Injected by PitchDeck.render() -->
+      </div>
+
+      <div class="flex justify-between items-center pt-3 border-t border-slate-800">
+        <button id="deck-prev-btn" onclick="PitchDeck.prev()" class="px-3 py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs">
+          ← PREVIOUS
+        </button>
+        <button id="deck-next-btn" onclick="PitchDeck.next()" class="btn-cyan px-4 py-1.5 rounded font-bold text-xs">
+          NEXT SLIDE →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: JUDGE WOW TOUR (8-Step Walkthrough)
+       ========================================================================= -->
+  <div id="judge-tour-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel p-6 max-w-lg w-full border-cyan-400 shadow-2xl space-y-4 font-mono">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+        <span id="tour-step-badge" class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">STEP 1 OF 8</span>
+        <button onclick="JudgeTour.end()" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <div class="space-y-2">
+        <h3 id="tour-step-title" class="text-lg font-bold text-white">Step 1: Input 2D RGB Image</h3>
+        <p id="tour-step-desc" class="text-xs text-slate-300 leading-relaxed">
+          Judge loads an ordinary single 2D aerial or street image. The system validates pixel matrix and confirms: 'No LiDAR detected. No multi-view stereo required.'
+        </p>
+      </div>
+
+      <div class="flex justify-between items-center pt-3 border-t border-slate-800">
+        <button id="tour-prev-btn" onclick="JudgeTour.prev()" class="px-3 py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs">
+          ← PREVIOUS
+        </button>
+        <button id="tour-next-btn" onclick="JudgeTour.next()" class="btn-cyan px-4 py-1.5 rounded font-bold text-xs">
+          NEXT STEP →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Structure Telemetry Modal -->
+  <div id="structure-telemetry-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- =========================================================================
+       SCRIPTS
+       ========================================================================= -->
+  <script src="js/sample_dataset.js"></script>
+  <script src="js/depth_engine.js"></script>
+  <script src="js/height_engine.js"></script>
+  <script src="js/three_viewer.js"></script>
+  <script src="js/flythrough.js"></script>
+  <script src="js/disaster_module.js"></script>
+  <script src="js/gis_module.js"></script>
+  <script src="js/pitch_deck.js"></script>
+  <script src="js/report_generator.js"></script>
+  <script src="js/judge_tour.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

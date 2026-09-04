@@ -1,0 +1,340 @@
+/* ==========================================================================
+   DEPTH WIZARD — Tactical Command Center Stylesheet
+   Smart India Hackathon 2026 | Problem Statement SIH26175
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap');
+
+:root {
+  --bg-primary: #07090e;
+  --bg-secondary: #0d121d;
+  --bg-panel: rgba(13, 18, 29, 0.75);
+  --bg-panel-hover: rgba(20, 27, 43, 0.85);
+  --accent-cyan: #00f0ff;
+  --accent-blue: #0077ff;
+  --accent-neon-green: #00ff88;
+  --accent-amber: #f59e0b;
+  --accent-rose: #ff0055;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-cyan: rgba(0, 240, 255, 0.3);
+  --border-cyan-bright: #00f0ff;
+}
+
+/* Light Mode Overrides */
+body.light-mode {
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #ffffff;
+  --bg-panel: rgba(255, 255, 255, 0.9);
+  --bg-panel-hover: rgba(248, 250, 252, 0.98);
+  --accent-cyan: #0284c7;
+  --accent-blue: #2563eb;
+  --accent-neon-green: #059669;
+  --accent-amber: #d97706;
+  --accent-rose: #e11d48;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --border-subtle: rgba(15, 23, 42, 0.12);
+  --border-cyan: rgba(2, 132, 199, 0.35);
+  --border-cyan-bright: #0284c7;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 240, 255, 0.3) rgba(13, 18, 29, 0.8);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Background Cyber Grid */
+.bg-command-grid {
+  background-image: 
+    linear-gradient(to right, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+body.light-mode .bg-command-grid {
+  background-image: 
+    linear-gradient(to right, rgba(2, 132, 199, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(2, 132, 199, 0.06) 1px, transparent 1px);
+}
+
+/* Glassmorphism Panel */
+.glass-panel {
+  background: var(--bg-panel);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+}
+
+body.light-mode .glass-panel {
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.06);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+.glass-panel:hover {
+  border-color: rgba(0, 240, 255, 0.25);
+}
+
+body.light-mode .glass-panel:hover {
+  border-color: rgba(2, 132, 199, 0.4);
+}
+
+.glass-panel-cyan {
+  border-color: var(--border-cyan);
+  box-shadow: 0 0 24px -6px rgba(0, 240, 255, 0.15);
+}
+
+/* Cyber Glow Buttons */
+.btn-cyan {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(0, 119, 255, 0.25));
+  border: 1px solid var(--accent-cyan);
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+  box-shadow: 0 0 16px -4px rgba(0, 240, 255, 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.light-mode .btn-cyan {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #ffffff;
+  text-shadow: none;
+  border-color: #0284c7;
+  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
+}
+
+.btn-cyan:hover {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.3), rgba(0, 119, 255, 0.4));
+  box-shadow: 0 0 24px 0px rgba(0, 240, 255, 0.7);
+  transform: translateY(-1px);
+}
+
+body.light-mode .btn-cyan:hover {
+  background: linear-gradient(135deg, #0369a1, #1d4ed8);
+  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.4);
+}
+
+.btn-cyan:active {
+  transform: translateY(0px);
+}
+
+/* Light mode specific element styling */
+body.light-mode header {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.light-mode header .text-white {
+  color: #0f172a !important;
+}
+
+body.light-mode header .text-slate-400 {
+  color: #64748b !important;
+}
+
+body.light-mode .tab-pane .text-white {
+  color: #0f172a !important;
+}
+
+body.light-mode .tab-pane .text-slate-300 {
+  color: #334155 !important;
+}
+
+body.light-mode .tab-pane .text-slate-400 {
+  color: #64748b !important;
+}
+
+body.light-mode .bg-slate-900,
+body.light-mode .bg-slate-900\/80,
+body.light-mode .bg-slate-900\/60,
+body.light-mode .bg-slate-900\/40,
+body.light-mode .bg-slate-950,
+body.light-mode .bg-slate-950\/70,
+body.light-mode .bg-slate-950\/60 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+body.light-mode .border-slate-800,
+body.light-mode .border-slate-700,
+body.light-mode .border-slate-800\/80 {
+  border-color: #e2e8f0 !important;
+}
+
+body.light-mode .bg-slate-800 {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.light-mode .bg-slate-800:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+body.light-mode table thead tr {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+}
+
+body.light-mode table tbody tr:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* AI Pipeline Step Indicator */
+.pipeline-step {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.pipeline-step.active {
+  border-color: var(--accent-cyan);
+  background: rgba(0, 240, 255, 0.1);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.3);
+}
+
+body.light-mode .pipeline-step.active {
+  background: rgba(2, 132, 199, 0.12);
+  color: #0284c7;
+  border-color: #0284c7;
+}
+
+.pipeline-step.completed {
+  border-color: var(--accent-neon-green);
+  background: rgba(0, 255, 136, 0.08);
+  color: #a7f3d0;
+}
+
+body.light-mode .pipeline-step.completed {
+  background: rgba(5, 150, 105, 0.1);
+  color: #059669;
+  border-color: #059669;
+}
+
+/* Split Screen Wipe Slider */
+.split-viewer-container {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.split-viewer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  overflow: hidden;
+  border-right: 2px solid var(--accent-cyan);
+  box-shadow: 2px 0 12px rgba(0, 240, 255, 0.8);
+}
+
+.split-slider-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  background: #0f172a;
+  border: 2px solid var(--accent-cyan);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px var(--accent-cyan);
+  cursor: ew-resize;
+  z-index: 30;
+}
+
+/* 3D Drone Flythrough HUD */
+.flythrough-hud {
+  pointer-events: none;
+  background: radial-gradient(circle, transparent 60%, rgba(10, 14, 23, 0.6) 100%);
+}
+
+.hud-bracket {
+  border-color: rgba(0, 240, 255, 0.7);
+}
+
+/* Custom Range Sliders */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: #1e293b;
+  height: 6px;
+  border-radius: 4px;
+  outline: none;
+}
+
+body.light-mode input[type="range"] {
+  background: #cbd5e1;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--accent-cyan);
+  border: 2px solid #ffffff;
+}
+
+/* Pulse Animations */
+@keyframes cyberPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.96); }
+}
+
+.pulse-cyber {
+  animation: cyberPulse 2.5s infinite ease-in-out;
+}
+
+/* Print styles for Situation Report */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .not-printable, header, nav, #app-navigation {
+    display: none !important;
+  }
+  #printable-report {
+    border: none !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    max-width: 100% !important;
+  }
+  #printable-report * {
+    color: #000 !important;
+    border-color: #ccc !important;
+    background: transparent !important;
+  }
+}
